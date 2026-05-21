@@ -24,35 +24,35 @@ namespace HabitTracker.Controllers
             _authService = authService;
         }
 
-        [HttpPost("register")]
-        public IActionResult Register()
-        {
-            return Ok("API WORKING");
-        }
-
-        //[HttpPost("registers")]
-        //public async Task<IActionResult> Register(RegisterRequest request)
+        //[HttpPost("register")]
+        //public IActionResult Register()
         //{
-        //    try
-        //    {
-        //        bool exist = await _context.users.AnyAsync(x => x.email == request.email);
-        //        if (exist)
-        //        {
-        //            return BadRequest("User already exist");
-        //        }
-
-        //        string token = await _authService.Register(request);
-
-        //        return Ok(new AuthResponse
-        //        {
-        //            Token = token
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, ex.ToString());
-        //    }
+        //    return Ok("API WORKING");
         //}
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(RegisterRequest request)
+        {
+            try
+            {
+                bool exist = await _context.users.AnyAsync(x => x.email == request.email);
+                if (exist)
+                {
+                    return BadRequest("User already exist");
+                }
+
+                string token = await _authService.Register(request);
+
+                return Ok(new AuthResponse
+                {
+                    Token = token
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.ToString());
+            }
+        }
 
         [HttpPost("login")]
         public async Task<ActionResult<string>> LogIn(LoginRequest request) 

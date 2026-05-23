@@ -2,6 +2,7 @@ namespace HabitTracker.Models.DTOs
 {
     public class LogEntryRequest
     {
+        public int? EntryId { get; set; }
         public int HabitId { get; set; }
         public DateTime? EntryDate { get; set; }
         public decimal? TimeLog { get; set; }

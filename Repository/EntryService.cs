@@ -9,6 +9,9 @@ namespace HabitTracker.Repository;
 
 public class EntryService : IEntryService
 {
+    public const string DuplicateEntryMessage =
+        "You already logged today's entry, either update it or first remove it to add again.";
+
     private readonly AppDbContext _context;
 
     public EntryService(AppDbContext context)
@@ -16,18 +19,44 @@ public class EntryService : IEntryService
         _context = context;
     }
 
-    public async Task<TodayHabitDto?> LogEntryAsync(LogEntryRequest request, int userId)
+    public async Task<LogEntryResult> LogEntryAsync(LogEntryRequest request, int userId)
     {
         var habit = await _context.habits
             .FirstOrDefaultAsync(h => h.id == request.HabitId && h.userid == userId && !h.isdeleted);
 
         if (habit == null)
-            return null;
+            return LogEntryResult.NotFoundResult();
 
-        var entry = await SaveEntryAsync(habit, userId, request.EntryDate, request.TimeLog, request.IsDone, request.QuantityLog);
+        var (entry, conflict) = await SaveEntryAsync(
+            habit,
+            userId,
+            request.EntryDate,
+            request.TimeLog,
+            request.IsDone,
+            request.QuantityLog,
+            request.EntryId);
+
+        if (conflict)
+            return LogEntryResult.Conflict(DuplicateEntryMessage);
+
+        if (entry == null)
+            return LogEntryResult.NotFoundResult();
+
         await _context.SaveChangesAsync();
+        return LogEntryResult.Success(MapToLegacyDto(habit, entry));
+    }
 
-        return MapToLegacyDto(habit, entry);
+    public async Task<bool> DeleteEntryAsync(int entryId, int userId)
+    {
+        var entry = await _context.entries
+            .FirstOrDefaultAsync(e => e.id == entryId && e.userid == userId);
+
+        if (entry == null)
+            return false;
+
+        _context.entries.Remove(entry);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     public async Task<List<TodayHabitDto>> BulkLogAsync(BulkLogEntriesRequest request, int userId)
@@ -57,7 +86,7 @@ public class EntryService : IEntryService
                         continue;
                 }
 
-                await SaveEntryAsync(habit, userId, request.EntryDate, item.TimeLog, item.IsDone, item.QuantityLog);
+                await SaveEntryAsync(habit, userId, request.EntryDate, item.TimeLog, item.IsDone, item.QuantityLog, null, allowOverwrite: true);
             }
 
             await _context.SaveChangesAsync();
@@ -72,11 +101,11 @@ public class EntryService : IEntryService
         return await GetTodayAsync(request.EntryDate, userId);
     }
 
-    public async Task<TodayDashboardDto> GetTodayDashboardAsync(int userId)
+    public async Task<TodayDashboardDto> GetTodayDashboardAsync(int userId, DateTime? date)
     {
-        var (dayStart, dayEnd) = PeriodHelper.GetUtcDayRange(null);
-        var (weekStart, weekEnd) = PeriodHelper.GetUtcWeekRange(null);
-        var (monthStart, monthEnd) = PeriodHelper.GetUtcMonthRange(null);
+        var (dayStart, dayEnd) = PeriodHelper.GetUtcDayRange(date);
+        var (weekStart, weekEnd) = PeriodHelper.GetUtcWeekRange(date);
+        var (monthStart, monthEnd) = PeriodHelper.GetUtcMonthRange(date);
 
         var habits = await _context.habits
             .Where(h => h.userid == userId && !h.isdeleted)
@@ -166,28 +195,29 @@ public class EntryService : IEntryService
         }).ToList();
     }
 
-    private async Task<Entry> SaveEntryAsync(
+    private async Task<(Entry? entry, bool conflict)> SaveEntryAsync(
         Habit habit,
         int userId,
         DateTime? entryDate,
         decimal? timeLog,
         bool? isDone,
-        decimal? quantityLog)
+        decimal? quantityLog,
+        int? entryId,
+        bool allowOverwrite = false)
     {
-        if (habit.frequencytype == FrequencyType.Daily)
-            return await UpsertDailyEntryAsync(habit, userId, entryDate, timeLog, isDone, quantityLog);
+        if (entryId.HasValue)
+        {
+            var existing = await _context.entries
+                .FirstOrDefaultAsync(e => e.id == entryId.Value && e.userid == userId && e.habitid == habit.id);
 
-        return await InsertPeriodEntryAsync(habit, userId, entryDate, timeLog, isDone, quantityLog);
-    }
+            if (existing == null)
+                return (null, false);
 
-    private async Task<Entry> UpsertDailyEntryAsync(
-        Habit habit,
-        int userId,
-        DateTime? entryDate,
-        decimal? timeLog,
-        bool? isDone,
-        decimal? quantityLog)
-    {
+            ApplyEntryValues(habit, existing, timeLog, isDone, quantityLog);
+            existing.points = CalculatePoints(habit, existing);
+            return (existing, false);
+        }
+
         var (dayStart, dayEnd) = PeriodHelper.GetUtcDayRange(entryDate);
 
         var entry = await _context.entries
@@ -197,47 +227,28 @@ public class EntryService : IEntryService
                 e.entrydate >= dayStart &&
                 e.entrydate < dayEnd);
 
-        if (entry == null)
+        if (entry != null)
         {
-            entry = new Entry
-            {
-                userid = userId,
-                habitid = habit.id,
-                entrydate = dayStart,
-                points = 0
-            };
-            _context.entries.Add(entry);
+            if (!allowOverwrite)
+                return (null, true);
+
+            ApplyEntryValues(habit, entry, timeLog, isDone, quantityLog);
+            entry.points = CalculatePoints(habit, entry);
+            return (entry, false);
         }
 
-        ApplyEntryValues(habit, entry, timeLog, isDone, quantityLog);
-        entry.points = CalculatePoints(habit, entry);
-        return entry;
-    }
-
-    private async Task<Entry> InsertPeriodEntryAsync(
-        Habit habit,
-        int userId,
-        DateTime? entryDate,
-        decimal? timeLog,
-        bool? isDone,
-        decimal? quantityLog)
-    {
-        var when = entryDate.HasValue
-            ? PeriodHelper.GetUtcDayRange(entryDate).start
-            : DateTime.UtcNow;
-
-        var entry = new Entry
+        entry = new Entry
         {
             userid = userId,
             habitid = habit.id,
-            entrydate = when,
+            entrydate = dayStart,
             points = 0
         };
+        _context.entries.Add(entry);
 
         ApplyEntryValues(habit, entry, timeLog, isDone, quantityLog);
         entry.points = CalculatePoints(habit, entry);
-        _context.entries.Add(entry);
-        return entry;
+        return (entry, false);
     }
 
     private static void ApplyEntryValues(Habit habit, Entry entry, decimal? timeLog, bool? isDone, decimal? quantityLog)

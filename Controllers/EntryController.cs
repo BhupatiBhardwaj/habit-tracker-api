@@ -30,6 +30,14 @@ namespace HabitTracker.Controllers
             return Ok(result);
         }
 
+        [HttpGet("Today")]
+        public async Task<ActionResult<TodayDashboardDto>> Today()
+        {
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var result = await _entryService.GetTodayDashboardAsync(userId);
+            return Ok(result);
+        }
+
         [HttpGet("GetByDate")]
         public async Task<ActionResult<List<TodayHabitDto>>> GetByDate([FromQuery] DateTime? date)
         {

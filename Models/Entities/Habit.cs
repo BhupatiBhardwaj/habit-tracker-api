@@ -11,5 +11,14 @@ namespace HabitTracker.Models.Entities;
 
         [Column("is_deleted")]
         public bool isdeleted { get; set; }
+
+        [Column("pointsperunit")]
+        public decimal pointsperunit { get; set; } = 1;
+
+        [Column("frequencytype")]
+        public int frequencytype { get; set; } = 1;
+
+        [Column("targetcount")]
+        public int targetcount { get; set; } = 1;
     }
 

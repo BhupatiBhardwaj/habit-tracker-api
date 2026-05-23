@@ -22,7 +22,10 @@ namespace HabitTracker.Repository
                 categoryid = request.CategoryId,
                 typeid = request.TypeId,
                 userid = userId,
-                isdeleted = false
+                isdeleted = false,
+                pointsperunit = request.PointsPerUnit,
+                frequencytype = request.FrequencyType,
+                targetcount = request.TargetCount
             };
 
             _context.habits.Add(habit);
@@ -72,6 +75,9 @@ namespace HabitTracker.Repository
             habit.name = request.name;
             habit.categoryid = request.CategoryId;
             habit.typeid = request.TypeId;
+            habit.pointsperunit = request.PointsPerUnit;
+            habit.frequencytype = request.FrequencyType;
+            habit.targetcount = request.TargetCount;
 
             await _context.SaveChangesAsync();
             return true;

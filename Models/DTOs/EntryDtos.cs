@@ -22,6 +22,12 @@ namespace HabitTracker.Models.DTOs
         public decimal? QuantityLog { get; set; }
         public decimal? Points { get; set; }
         public bool IsDeleted { get; set; }
+        public decimal PointsPerUnit { get; set; }
+        public int FrequencyType { get; set; }
+        public int TargetCount { get; set; }
+        public int CurrentProgress { get; set; }
+        public bool IsCompletedToday { get; set; }
+        public bool IsPeriodMet { get; set; }
     }
 
     public class BulkLogEntryItem

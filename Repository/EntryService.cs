@@ -108,7 +108,7 @@ public class EntryService : IEntryService
         var (monthStart, monthEnd) = PeriodHelper.GetUtcMonthRange(date);
 
         var habits = await _context.habits
-            .Where(h => h.userid == userId && !h.isdeleted)
+            .Where(h => h.userid == userId)
             .ToListAsync();
 
         var todayEntries = await _context.entries
@@ -298,7 +298,8 @@ public class EntryService : IEntryService
             TimeLog = todayEntry?.timelog,
             IsDone = todayEntry?.isdone,
             QuantityLog = todayEntry?.quantitylog,
-            Points = todayEntry?.points
+            Points = todayEntry?.points,
+            isHabitDeleted = habit.isdeleted
         };
     }
 

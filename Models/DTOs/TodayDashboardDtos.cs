@@ -24,4 +24,5 @@ public class TodayHabitCardDto
     public bool? IsDone { get; set; }
     public decimal? QuantityLog { get; set; }
     public decimal? Points { get; set; }
+    public bool isHabitDeleted { get; set; } = false;
 }

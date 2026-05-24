@@ -14,7 +14,7 @@ namespace HabitTracker.Models.DTOs
     {
         public int HabitId { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int CategoryId { get; set; }
+        public int? CategoryId { get; set; }
         public int TypeId { get; set; }
         public int? EntryId { get; set; }
         public DateTime? EntryDate { get; set; }

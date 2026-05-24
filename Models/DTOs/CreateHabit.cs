@@ -2,7 +2,7 @@
 {
     public class CreateHabit
     {
-        public int CategoryId {  get; set; }
+        public int? CategoryId {  get; set; }
         public int TypeId { get; set; }
         public string name{ get; set; } = string.Empty;
         public decimal PointsPerUnit { get; set; } = 1;

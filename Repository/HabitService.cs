@@ -19,7 +19,6 @@ namespace HabitTracker.Repository
             var habit = new Habit
             {
                 name = request.name,
-                categoryid = request.CategoryId,
                 typeid = request.TypeId,
                 userid = userId,
                 isdeleted = false,

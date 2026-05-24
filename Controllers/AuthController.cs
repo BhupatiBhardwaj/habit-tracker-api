@@ -24,12 +24,6 @@ namespace HabitTracker.Controllers
             _authService = authService;
         }
 
-        //[HttpPost("register")]
-        //public IActionResult Register()
-        //{
-        //    return Ok("API WORKING");
-        //}
-
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
@@ -38,7 +32,10 @@ namespace HabitTracker.Controllers
                 bool exist = await _context.users.AnyAsync(x => x.email == request.email);
                 if (exist)
                 {
-                    return BadRequest("User already exist");
+                    return BadRequest(new
+                    {
+                        message = "User already exists"
+                    });
                 }
 
                 string token = await _authService.Register(request);
@@ -60,10 +57,21 @@ namespace HabitTracker.Controllers
             var user = await _context.users.FirstOrDefaultAsync(x => x.email == request.email);
             if(user == null)
             {
-                return Unauthorized();
+                return Unauthorized(new
+                {
+                    message = "User doesn't exists"
+                });
             }
 
             string token = await _authService.Login(user, request.password);
+
+            if(token == "UnAuthorized")
+            {
+                return Unauthorized(new
+                {
+                    message = "Wrong Password"
+                });
+            }
 
             return Ok(new AuthResponse
             {

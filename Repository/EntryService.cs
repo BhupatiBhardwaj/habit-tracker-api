@@ -139,9 +139,9 @@ public class EntryService : IEntryService
 
             if (habit.frequencytype == FrequencyType.Daily && !card.IsCompletedToday)
                 dashboard.DailyPending.Add(card);
-            else if (habit.frequencytype == FrequencyType.Weekly && !card.IsPeriodMet)
+            else if (habit.frequencytype == FrequencyType.Weekly )
                 dashboard.WeeklyProgress.Add(card);
-            else if (habit.frequencytype == FrequencyType.Monthly && !card.IsPeriodMet)
+            else if (habit.frequencytype == FrequencyType.Monthly )
                 dashboard.MonthlyProgress.Add(card);
         }
 

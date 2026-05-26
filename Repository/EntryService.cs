@@ -137,11 +137,11 @@ public class EntryService : IEntryService
             if (card.IsCompletedToday)
                 dashboard.CompletedToday.Add(card);
 
-            if (habit.frequencytype == FrequencyType.Daily && !card.IsCompletedToday)
+            if (habit.frequencytype == FrequencyType.Daily && !card.IsCompletedToday && !habit.isdeleted)
                 dashboard.DailyPending.Add(card);
-            else if (habit.frequencytype == FrequencyType.Weekly )
+            else if (habit.frequencytype == FrequencyType.Weekly && !habit.isdeleted)
                 dashboard.WeeklyProgress.Add(card);
-            else if (habit.frequencytype == FrequencyType.Monthly )
+            else if (habit.frequencytype == FrequencyType.Monthly && !habit.isdeleted)
                 dashboard.MonthlyProgress.Add(card);
         }
 

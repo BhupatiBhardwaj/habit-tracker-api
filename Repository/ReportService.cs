@@ -16,7 +16,7 @@ public class ReportService : IReportService
         _context = context;
     }
 
-    public async Task<ReportsSummaryDto> GetSummaryAsync(int userId, DateTime? from, DateTime? to)
+    public async Task<ReportsSummaryDto> GetSummaryAsync(int userId, DateTime from, DateTime to)
     {
         var range = NormalizeRange(from, to);
 
@@ -66,13 +66,13 @@ public class ReportService : IReportService
         foreach (var item in result.Habits)
         {
             var habit = habits.First(h => h.id == item.HabitId);
-            item.CurrentStreak = await CalculateStreakAsync(userId, habit);
+            item.CurrentStreak = await CalculateStreakAsync(userId, habit, from, to);
         }
 
         return result;
     }
 
-    public async Task<HabitReportDetailDto?> GetHabitDetailAsync(int userId, int habitId, DateTime? from, DateTime? to)
+    public async Task<HabitReportDetailDto?> GetHabitDetailAsync(int userId, int habitId, DateTime from, DateTime to)
     {
         var habit = await _context.habits
             .FirstOrDefaultAsync(h => h.id == habitId && h.userid == userId && !h.isdeleted);
@@ -101,7 +101,7 @@ public class ReportService : IReportService
             ExpectedCount = expected,
             CompletionPercent = percent,
             TotalPoints = entries.Sum(e => e.points),
-            CurrentStreak = await CalculateStreakAsync(userId, habit),
+            CurrentStreak = await CalculateStreakAsync(userId, habit, from, to),
             Entries = entries.Select(e => new ReportEntryDto
             {
                 Id = e.id,
@@ -114,10 +114,10 @@ public class ReportService : IReportService
         };
     }
 
-    private async Task<int> CalculateStreakAsync(int userId, Habit habit)
+    private async Task<int> CalculateStreakAsync(int userId, Habit habit, DateTime from, DateTime to)
     {
         if (habit.frequencytype == FrequencyType.Daily)
-            return await CalculateDailyStreakAsync(userId, habit);
+            return await CalculateDailyStreakAsync(userId, habit, from, to);
 
         if (habit.frequencytype == FrequencyType.Weekly)
             return await CalculateWeeklyStreakAsync(userId, habit);
@@ -125,25 +125,25 @@ public class ReportService : IReportService
         return await CalculateMonthlyStreakAsync(userId, habit);
     }
 
-    private async Task<int> CalculateDailyStreakAsync(int userId, Habit habit)
+    private async Task<int> CalculateDailyStreakAsync(int userId, Habit habit, DateTime from, DateTime to)
     {
         var streak = 0;
-        var cursor = DateTime.UtcNow.Date;
+        var it = to;
 
         while (true)
         {
-            var (dayStart, dayEnd) = PeriodHelper.GetUtcDayRange(cursor);
+            var (dayStart, dayEnd) = PeriodHelper.GetUtcDayRange(it);
             var count = await _context.entries.CountAsync(e =>
                 e.userid == userId &&
                 e.habitid == habit.id &&
                 e.entrydate >= dayStart &&
                 e.entrydate < dayEnd);
 
-            if (count < habit.targetcount)
+            if (count < habit.targetcount || it < from)
                 break;
 
             streak++;
-            cursor = cursor.AddDays(-1);
+            it = it.AddDays(-1);
         }
 
         return streak;

@@ -4,7 +4,7 @@ namespace HabitTracker.Models.DTOs
     {
         public int Id { get; set; }
         public string name { get; set; } = string.Empty;
-        public int CategoryId { get; set; }
+        public int? CategoryId { get; set; }
         public int TypeId { get; set; }
         public decimal PointsPerUnit { get; set; } = 1;
         public int FrequencyType { get; set; } = 1;

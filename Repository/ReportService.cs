@@ -66,7 +66,14 @@ public class ReportService : IReportService
         foreach (var item in result.Habits)
         {
             var habit = habits.First(h => h.id == item.HabitId);
-            item.CurrentStreak = await CalculateStreakAsync(userId, habit, from, to);
+            if (habit.isgood)
+            {
+                item.CurrentStreak = await CalculateGoodHabitDailyStreakAsync(userId, habit, from, to);
+            }
+            else
+            {
+                item.CurrentStreak = await CalculateBadHabitDailyStreakAsync(userId, habit, from, to);
+            }
         }
 
         return result;
@@ -90,6 +97,16 @@ public class ReportService : IReportService
         var actual = entries.Count;
         var expected = PeriodHelper.CalculateExpectedTarget(habit.frequencytype, habit.targetcount, range.from, range.to);
         var percent = expected > 0 ? Math.Round((decimal)actual / expected * 100, 1) : 0;
+        var currentStreak = 0;
+        if (habit.isgood)
+        {
+            currentStreak = await CalculateGoodHabitDailyStreakAsync(userId, habit, from, to);
+        }
+        else
+        {
+            currentStreak = await CalculateBadHabitDailyStreakAsync(userId, habit, from, to);
+        }
+
 
         return new HabitReportDetailDto
         {
@@ -101,7 +118,7 @@ public class ReportService : IReportService
             ExpectedCount = expected,
             CompletionPercent = percent,
             TotalPoints = entries.Sum(e => e.points),
-            CurrentStreak = await CalculateStreakAsync(userId, habit, from, to),
+            CurrentStreak = currentStreak,
             Entries = entries.Select(e => new ReportEntryDto
             {
                 Id = e.id,
@@ -109,23 +126,12 @@ public class ReportService : IReportService
                 TimeLog = e.timelog,
                 IsDone = e.isdone,
                 QuantityLog = e.quantitylog,
-                Points = e.points
+                Points = Math.Abs(e.points),
             }).ToList()
         };
     }
 
-    private async Task<int> CalculateStreakAsync(int userId, Habit habit, DateTime from, DateTime to)
-    {
-        if (habit.frequencytype == FrequencyType.Daily)
-            return await CalculateDailyStreakAsync(userId, habit, from, to);
-
-        if (habit.frequencytype == FrequencyType.Weekly)
-            return await CalculateWeeklyStreakAsync(userId, habit);
-
-        return await CalculateMonthlyStreakAsync(userId, habit);
-    }
-
-    private async Task<int> CalculateDailyStreakAsync(int userId, Habit habit, DateTime from, DateTime to)
+    private async Task<int> CalculateGoodHabitDailyStreakAsync(int userId, Habit habit, DateTime from, DateTime to)
     {
         var streak = 0;
         var it = to;
@@ -140,6 +146,30 @@ public class ReportService : IReportService
                 e.entrydate < dayEnd);
 
             if (count < habit.targetcount || it < from)
+                break;
+
+            streak++;
+            it = it.AddDays(-1);
+        }
+
+        return streak;
+    }
+
+    private async Task<int> CalculateBadHabitDailyStreakAsync(int userId, Habit habit, DateTime from, DateTime to)
+    {
+        var streak = 0;
+        var it = to;
+
+        while (true)
+        {
+            var (dayStart, dayEnd) = PeriodHelper.GetUtcDayRange(it);
+            var count = await _context.entries.CountAsync(e =>
+                e.userid == userId &&
+                e.habitid == habit.id &&
+                e.entrydate >= dayStart &&
+                e.entrydate < dayEnd);
+
+            if (count > habit.targetcount || it < from)
                 break;
 
             streak++;

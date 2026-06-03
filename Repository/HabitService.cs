@@ -24,7 +24,8 @@ namespace HabitTracker.Repository
                 isdeleted = false,
                 pointsperunit = request.PointsPerUnit,
                 frequencytype = request.FrequencyType,
-                targetcount = request.TargetCount
+                targetcount = request.TargetCount,
+                isgood = request.IsGood,
             };
 
             _context.habits.Add(habit);

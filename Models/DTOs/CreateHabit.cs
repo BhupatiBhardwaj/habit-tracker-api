@@ -8,6 +8,7 @@
         public decimal PointsPerUnit { get; set; } = 1;
         public int FrequencyType { get; set; } = 1;
         public int TargetCount { get; set; } = 1;
+        public bool IsGood { get; set; } = true;
 
     }
 

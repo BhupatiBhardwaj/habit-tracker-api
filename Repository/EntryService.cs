@@ -299,7 +299,8 @@ public class EntryService : IEntryService
             IsDone = todayEntry?.isdone,
             QuantityLog = todayEntry?.quantitylog,
             Points = todayEntry?.points,
-            isHabitDeleted = habit.isdeleted
+            isHabitDeleted = habit.isdeleted,
+            IsGood = habit.isgood,
         };
     }
 

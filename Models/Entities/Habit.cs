@@ -20,5 +20,7 @@ namespace HabitTracker.Models.Entities;
 
         [Column("targetcount")]
         public int targetcount { get; set; } = 1;
+
+        public bool isgood { get; set; } = true;
     }
 

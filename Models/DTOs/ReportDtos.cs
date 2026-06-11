@@ -6,7 +6,7 @@ public class HabitReportSummaryDto
     public string Name { get; set; } = string.Empty;
     public int FrequencyType { get; set; }
     public int TargetCount { get; set; }
-    public int ActualCount { get; set; }
+    public decimal ActualCount { get; set; }
     public int ExpectedCount { get; set; }
     public decimal CompletionPercent { get; set; }
     public decimal TotalPoints { get; set; }

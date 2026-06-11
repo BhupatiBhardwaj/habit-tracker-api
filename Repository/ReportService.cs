@@ -30,7 +30,7 @@ public class ReportService : IReportService
             .Select(g => new
             {
                 HabitId = g.Key,
-                Count = g.Count(),
+                Count = g.Sum(x => x.quantitylog ?? x.timelog ?? 1),
                 Points = g.Sum(x => x.points)
             })
             .ToListAsync();

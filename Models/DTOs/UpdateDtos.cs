@@ -9,6 +9,7 @@ namespace HabitTracker.Models.DTOs
         public decimal PointsPerUnit { get; set; } = 1;
         public int FrequencyType { get; set; } = 1;
         public int TargetCount { get; set; } = 1;
+        public bool isGood { get; set; } = true;
     }
 
     public class UpdateCategory

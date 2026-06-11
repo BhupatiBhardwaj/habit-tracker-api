@@ -26,7 +26,7 @@ namespace HabitTracker.Models.DTOs
         public decimal PointsPerUnit { get; set; }
         public int FrequencyType { get; set; }
         public int TargetCount { get; set; }
-        public int CurrentProgress { get; set; }
+        public decimal CurrentProgress { get; set; }
         public bool IsCompletedToday { get; set; }
         public bool IsPeriodMet { get; set; }
     }

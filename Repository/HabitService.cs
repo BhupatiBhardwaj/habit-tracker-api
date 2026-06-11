@@ -78,6 +78,7 @@ namespace HabitTracker.Repository
             habit.pointsperunit = request.PointsPerUnit;
             habit.frequencytype = request.FrequencyType;
             habit.targetcount = request.TargetCount;
+            habit.isgood = request.isGood;
 
             await _context.SaveChangesAsync();
             return true;

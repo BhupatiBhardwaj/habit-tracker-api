@@ -115,17 +115,25 @@ public class EntryService : IEntryService
             .Where(e => e.userid == userId && e.entrydate >= dayStart && e.entrydate < dayEnd)
             .ToListAsync();
 
-        var weekCounts = await _context.entries
+        var weekEntries = await _context.entries
             .Where(e => e.userid == userId && e.entrydate >= weekStart && e.entrydate < weekEnd)
-            .GroupBy(e => e.habitid)
-            .Select(g => new { HabitId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.HabitId, x => x.Count);
+            .ToListAsync();
 
-        var monthCounts = await _context.entries
+        var weekCounts = weekEntries
+            .GroupBy(x => x.habitid)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.quantitylog ?? x.timelog ?? 1));
+
+        var monthEntries = await _context.entries
             .Where(e => e.userid == userId && e.entrydate >= monthStart && e.entrydate < monthEnd)
-            .GroupBy(e => e.habitid)
-            .Select(g => new { HabitId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.HabitId, x => x.Count);
+            .ToListAsync();
+
+        var monthCounts = monthEntries
+            .GroupBy(x => x.habitid)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.quantitylog ?? x.timelog ?? 1));
 
         var dashboard = new TodayDashboardDto();
 
@@ -175,17 +183,25 @@ public class EntryService : IEntryService
             .ThenBy(h => h.name)
             .ToList();
 
-        var weekCounts = await _context.entries
+        var weekEntries = await _context.entries
             .Where(e => e.userid == userId && e.entrydate >= weekStart && e.entrydate < weekEnd)
-            .GroupBy(e => e.habitid)
-            .Select(g => new { HabitId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.HabitId, x => x.Count);
+            .ToListAsync();
 
-        var monthCounts = await _context.entries
+        var weekCounts = weekEntries
+            .GroupBy(x => x.habitid)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.quantitylog ?? x.timelog ?? 1));
+
+        var monthEntries = await _context.entries
             .Where(e => e.userid == userId && e.entrydate >= monthStart && e.entrydate < monthEnd)
-            .GroupBy(e => e.habitid)
-            .Select(g => new { HabitId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.HabitId, x => x.Count);
+            .ToListAsync();
+
+        var monthCounts = monthEntries
+            .GroupBy(x => x.habitid)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.quantitylog ?? x.timelog ?? 1));
 
         return habits.Select(h =>
         {
@@ -270,8 +286,8 @@ public class EntryService : IEntryService
     private static TodayHabitCardDto BuildCard(
         Habit habit,
         Entry? todayEntry,
-        Dictionary<int, int> weekCounts,
-        Dictionary<int, int> monthCounts)
+        Dictionary<int, decimal> weekCounts,
+        Dictionary<int, decimal> monthCounts)
     {
         var isCompletedToday = todayEntry != null;
         var currentProgress = habit.frequencytype switch
